@@ -338,12 +338,21 @@ class ImportAjax extends Simpla
 	 				{
 		 				// Имя файла
 						$image_filename = pathinfo($image, PATHINFO_BASENAME);
+                        $trans_image_filename = $this->lang_translit($image_filename);
+                        $trans_image = $this->lang_translit($image);
+
+                        // Проверит картинки виде 3м_8.jpg (3м_)
+                        $check_other_uploaded = pathinfo($image, PATHINFO_FILENAME).'_';
+                        $trans_check_other_uploaded = $this->lang_translit($check_other_uploaded);
 
 		 				// Добавляем изображение только если такого еще нет в этом товаре
-						$query = $this->db->placehold('SELECT filename FROM __images WHERE product_id=? AND (filename=? OR filename=?) LIMIT 1', $product_id, $image_filename, $image);
-                        print_r($query);
+						$query = $this->db->placehold("SELECT filename FROM __images WHERE product_id=? AND (filename=? OR filename=? OR filename=? OR filename=? OR filename LIKE '%$check_other_uploaded%' OR filename LIKE '%$trans_check_other_uploaded%') LIMIT 1", $product_id, $image_filename, $image,$trans_image_filename, $trans_image);
+
                         $this->db->query($query);
-						if(!$this->db->result('filename'))
+
+                        $result_filename = $this->db->result('filename');
+
+						if(empty($result_filename))
 						{
 							$this->products->add_image($product_id, $image);
 						}
@@ -422,8 +431,8 @@ class ImportAjax extends Simpla
             elseif($imported_item->status == 'added')
             {
                 foreach ($new_prices as $n_p) {
-                    $n_p->variant_id = $variant->id;
-                    if(($price->from_amount == 1) || ($price->price > 0))
+                    $n_p->variant_id = $variant_id;
+                    if(($n_p->from_amount == 1) || ($n_p->price > 0))
                         $this->prices->add_variant_price($price);
                 }
             }
@@ -471,15 +480,21 @@ class ImportAjax extends Simpla
 
 	private function translit($text)
 	{
-		$ru = explode('-', "А-а-Б-б-В-в-Ґ-ґ-Г-г-Д-д-Е-е-Ё-ё-Є-є-Ж-ж-З-з-И-и-І-і-Ї-ї-Й-й-К-к-Л-л-М-м-Н-н-О-о-П-п-Р-р-С-с-Т-т-У-у-Ф-ф-Х-х-Ц-ц-Ч-ч-Ш-ш-Щ-щ-Ъ-ъ-Ы-ы-Ь-ь-Э-э-Ю-ю-Я-я");
-		$en = explode('-', "A-a-B-b-V-v-G-g-G-g-D-d-E-e-E-e-E-e-ZH-zh-Z-z-I-i-I-i-I-i-J-j-K-k-L-l-M-m-N-n-O-o-P-p-R-r-S-s-T-t-U-u-F-f-H-h-TS-ts-CH-ch-SH-sh-SCH-sch---Y-y---E-e-YU-yu-YA-ya");
-
-	 	$res = str_replace($ru, $en, $text);
+		$res = $this->lang_translit($text);
 		$res = preg_replace("/[\s]+/ui", '-', $res);
 		$res = preg_replace('/[^\p{L}\p{Nd}\d-]/ui', '', $res);
 	 	$res = strtolower($res);
 	    return $res;
 	}
+
+    private function lang_translit($text)
+    {
+        $ru = explode('-', "А-а-Б-б-В-в-Ґ-ґ-Г-г-Д-д-Е-е-Ё-ё-Є-є-Ж-ж-З-з-И-и-І-і-Ї-ї-Й-й-К-к-Л-л-М-м-Н-н-О-о-П-п-Р-р-С-с-Т-т-У-у-Ф-ф-Х-х-Ц-ц-Ч-ч-Ш-ш-Щ-щ-Ъ-ъ-Ы-ы-Ь-ь-Э-э-Ю-ю-Я-я");
+        $en = explode('-', "A-a-B-b-V-v-G-g-G-g-D-d-E-e-E-e-E-e-ZH-zh-Z-z-I-i-I-i-I-i-J-j-K-k-L-l-M-m-N-n-O-o-P-p-R-r-S-s-T-t-U-u-F-f-H-h-TS-ts-CH-ch-SH-sh-SCH-sch---Y-y---E-e-YU-yu-YA-ya");
+
+        $res = str_replace($ru, $en, $text);
+        return $res;
+    }
 
 	// Фозвращает внутреннее название колонки по названию колонки в файле
 	private function internal_column_name($name)
