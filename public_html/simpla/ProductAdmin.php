@@ -48,7 +48,8 @@ class ProductAdmin extends Simpla
 				}
 			}
 
-			// Цены товара
+
+			// Множественные Цены товара 1
 			if($this->request->post('prices'))
 			{
 				foreach($this->request->post('prices') as $n=>$va)
@@ -61,6 +62,7 @@ class ProductAdmin extends Simpla
 					}
 				}
 			}
+			// Множественные Цены товара 1 end
 
 			// Категории товара
 			$product_categories = $this->request->post('categories');
